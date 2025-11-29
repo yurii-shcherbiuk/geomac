@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import io.silentsea.geomac.data.db.entities.GeomacCoordinates
+import java.util.Locale
 
 fun ByteArray.indexOf(array: ByteArray): Int {
     if (array.isEmpty() || array.size > size) return -1
@@ -24,7 +25,7 @@ fun Long.macString(separator: String = ":"): String = toString(16)
     .joinToString(separator)
 
 fun GeomacCoordinates.coordinatesString(): String =
-    "${"%.6f".format(latitude)}, ${"%.6f".format(longitude)}"
+    "${"%.6f".format(Locale.US, latitude)}, ${"%.6f".format(Locale.US, longitude)}"
 
 suspend fun Clipboard.copy(label: String, text: String) =
     setClipEntry(ClipEntry(ClipData.newPlainText(label, text)))

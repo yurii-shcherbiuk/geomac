@@ -50,6 +50,10 @@ android {
         compose = true
         buildConfig = true
     }
+    androidResources {
+        @Suppress("UnstableApiUsage")
+        generateLocaleConfig = true
+    }
 }
 
 dependencies {
