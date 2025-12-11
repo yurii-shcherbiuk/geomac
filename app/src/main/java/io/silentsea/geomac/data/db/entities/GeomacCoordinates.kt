@@ -11,7 +11,7 @@ import io.silentsea.geomac.domain.entites.Services
             entity = GeomacItem::class,
             parentColumns = ["mac"],
             childColumns = ["mac"],
-            onDelete = ForeignKey.Companion.CASCADE
+            onDelete = ForeignKey.CASCADE
         )
     ]
 )

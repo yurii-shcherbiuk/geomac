@@ -18,10 +18,8 @@
     <string name="show_stack_trace">Show stack trace</string>
     <string name="stack_trace">Stack trace</string>
     <string name="wifi_scan">Wi-Fi scanning</string>
-    <string name="grant_permission_manually">Grant permission manually</string>
     <string name="turn_on_wifi">Turn on Wi-Fi</string>
     <string name="unknown_ssid">Unknown SSID</string>
-    <string name="permission_description">Wi-Fi scanning requires location permission. Grant this permission.</string>
-    <string name="ok">OK</string>
-    <string name="permission">Permission</string>
+    <string name="permission_description">Wi-Fi scanning requires location permission</string>
+    <string name="go_to_settings">Go to settings</string>
 </resources>

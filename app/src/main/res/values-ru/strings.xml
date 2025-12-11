@@ -14,10 +14,8 @@
     <string name="show_stack_trace">Показать трассировку стека</string>
     <string name="stack_trace">Трассировка стека</string>
     <string name="wifi_scan">Сканирование Wi-Fi</string>
-    <string name="grant_permission_manually">Предоставьте разрешение вручную</string>
     <string name="turn_on_wifi">Включите Wi-Fi</string>
     <string name="unknown_ssid">Неизвестный SSID</string>
-    <string name="permission_description">Для сканирования Wi-Fi требуется разрешение на определение местоположения. Предоставьте это разрешение.</string>
-    <string name="ok">ОК</string>
-    <string name="permission">Разрешение</string>
+    <string name="permission_description">Для сканирования Wi-Fi требуется разрешение на определение местоположения</string>
+    <string name="go_to_settings">Перейти в настройки</string>
 </resources>

@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
@@ -31,7 +30,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import io.silentsea.geomac.R
 
 @Composable
-fun RowScope.InputTextField(
+fun InputTextField(
+    modifier: Modifier = Modifier,
     textFieldState: TextFieldState,
     onSearch: () -> Unit,
     onFocusChanged: (Boolean) -> Unit
@@ -87,8 +87,6 @@ fun RowScope.InputTextField(
             onSearch()
         },
         shape = CircleShape,
-        modifier = Modifier
-            .weight(1f)
-            .onFocusChanged { onFocusChanged(it.isFocused) }
+        modifier = modifier.onFocusChanged { onFocusChanged(it.isFocused) }
     )
 }
