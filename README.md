@@ -5,6 +5,12 @@
    through crowdsourcing in their mobile applications.
 </p>
 <p>This program may be useful for OSINT experts, wireless network researchers and wardrivers.</p>
+<h2>⚠️ Disclaimer</h2>
+<ul>
+   <li>This program is provided <b>"as is"</b>.</li>
+   <li>The author does <b>not encourage any illegal activity</b>.</li>
+   <li>Use it entirely <b>at your own risk</b>.</li>
+</ul>
 <h2>Screenshots</h2>
 <table>
    <thead>
