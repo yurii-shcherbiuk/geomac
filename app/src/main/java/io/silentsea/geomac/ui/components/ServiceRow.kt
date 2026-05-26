@@ -49,6 +49,9 @@ fun ServiceRow(
         )
 
         coordinates?.let { coordinates ->
+            val label = stringResource(R.string.coordinates, stringResource(service.resId))
+            val text = stringResource(R.string.coordinates_copied, stringResource(service.resId))
+
             Text(
                 text = coordinates.coordinatesString(),
                 style = MaterialTheme.typography.labelLarge,
@@ -59,19 +62,11 @@ fun ServiceRow(
                 ) {
                     coroutineScope.launch {
                         clipboard.copy(
-                            label = context.getString(
-                                R.string.coordinates,
-                                context.getString(service.resId)
-                            ),
+                            label = label,
                             text = coordinates.coordinatesString()
                         )
 
-                        context.showToast(
-                            text = context.getString(
-                                R.string.coordinates_copied,
-                                context.getString(service.resId)
-                            )
-                        )
+                        context.showToast(text = text)
                     }
                 }
             )

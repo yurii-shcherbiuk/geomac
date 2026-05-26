@@ -107,6 +107,11 @@ fun Geomac() {
     val wifiManager = context.getSystemService(WifiManager::class.java)
     var isWifiScanSheetOpened by remember { mutableStateOf(false) }
     val wifiScanPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    val text = stringResource(R.string.turn_on_wifi)
+    val message = stringResource(R.string.permission_description)
+    val actionLabel = stringResource(R.string.go_to_settings)
+
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
@@ -114,9 +119,7 @@ fun Geomac() {
                 if (wifiManager.isWifiEnabled || (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && wifiManager.isScanAlwaysAvailable)) {
                     isWifiScanSheetOpened = true
                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    context.showToast(
-                        text = context.getString(R.string.turn_on_wifi)
-                    )
+                    context.showToast(text = text)
 
                     context.startActivity(
                         Intent(Settings.Panel.ACTION_WIFI)
@@ -129,19 +132,17 @@ fun Geomac() {
             } else {
                 coroutineScope.launch {
                     val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.permission_description),
-                        actionLabel = context.getString(R.string.go_to_settings),
+                        message = message,
+                        actionLabel = actionLabel,
                         duration = SnackbarDuration.Long
                     )
 
                     if (result == SnackbarResult.ActionPerformed) {
                         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            setData(
-                                Uri.fromParts(
-                                    "package",
-                                    context.packageName,
-                                    null
-                                )
+                            data = Uri.fromParts(
+                                "package",
+                                context.packageName,
+                                null
                             )
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             context.startActivity(this)
@@ -258,6 +259,12 @@ fun Geomac() {
                                             key = lazyPagingItems.itemKey { it.mac }
                                         ) { index ->
                                             lazyPagingItems[index]?.let { item ->
+                                                val message = stringResource(
+                                                    R.string.mac_deleted,
+                                                    item.mac.macString()
+                                                )
+                                                val actionLabel = stringResource(R.string.undo)
+
                                                 Card(
                                                     item = item,
                                                     isSearching = searching.contains(item.mac),
@@ -268,13 +275,8 @@ fun Geomac() {
 
                                                             val result = snackbarHostState
                                                                 .showSnackbar(
-                                                                    message = context.getString(
-                                                                        R.string.mac_deleted,
-                                                                        item.mac.macString()
-                                                                    ),
-                                                                    actionLabel = context.getString(
-                                                                        R.string.undo
-                                                                    ),
+                                                                    message = message,
+                                                                    actionLabel = actionLabel,
                                                                     duration = SnackbarDuration.Long
                                                                 )
 
@@ -362,6 +364,8 @@ fun Geomac() {
                 modifier = Modifier.padding(vertical = 8.dp),
                 expanded = true,
                 floatingActionButton = {
+                    val text = stringResource(R.string.turn_on_wifi)
+
                     FloatingToolbarDefaults.VibrantFloatingActionButton(
                         onClick = {
                             if (wifiScanPermissionState.status.isGranted) {
@@ -369,9 +373,7 @@ fun Geomac() {
                                 if (wifiManager.isWifiEnabled || (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && wifiManager.isScanAlwaysAvailable)) {
                                     isWifiScanSheetOpened = true
                                 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    context.showToast(
-                                        text = context.getString(R.string.turn_on_wifi)
-                                    )
+                                    context.showToast(text = text)
 
                                     context.startActivity(
                                         Intent(Settings.Panel.ACTION_WIFI)
