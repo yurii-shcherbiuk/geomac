@@ -9,15 +9,13 @@ android {
     namespace = "io.silentsea.geomac"
 
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "io.silentsea.geomac"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 7
         versionName = "1.0.6"
     }
