@@ -162,7 +162,8 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
             )
         )
 
-        val size = ByteBuffer.allocate(2).apply { putShort(request.size.toShort()) }.array()
+        val size =
+            ByteBuffer.allocate(Short.SIZE_BYTES).apply { putShort(request.size.toShort()) }.array()
 
         val header = buildList {
             addAll(listOf(0x00, 0x01, 0x00, 0x05))
@@ -251,14 +252,14 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
             byteArrayOutputStream.toByteArray()
         }
 
-        val size = ByteBuffer.allocate(4).apply { putInt(gzipped.size) }.array()
+        val size = ByteBuffer.allocate(Int.SIZE_BYTES).apply { putInt(gzipped.size) }.array()
 
         val header = buildList {
             addAll(listOf(0x00, 0x02, 0x00, 0x00, 0x1f))
             addAll("location,2021,android,gms,en_US".toByteArray().toList())
             addAll(listOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01))
             addAll("g".toByteArray().toList())
-            addAll(ByteBuffer.allocate(4).apply { putInt(187) }.array().toList())
+            addAll(ByteBuffer.allocate(Int.SIZE_BYTES).apply { putInt(187) }.array().toList())
             addAll(listOf(0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x08))
             addAll("g:loc/ql".toByteArray().toList())
             addAll(listOf(0x00, 0x00, 0x00, 0x04))
