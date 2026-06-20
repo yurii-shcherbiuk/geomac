@@ -64,6 +64,8 @@ import androidx.paging.compose.itemKey
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import io.silentsea.geomac.R
 import io.silentsea.geomac.ui.components.Card
 import io.silentsea.geomac.ui.components.ErrorSheet
@@ -71,8 +73,10 @@ import io.silentsea.geomac.ui.components.InputTextField
 import io.silentsea.geomac.ui.components.WifiScanSheet
 import io.silentsea.geomac.utils.macString
 import io.silentsea.geomac.utils.showToast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -112,7 +116,7 @@ fun Geomac() {
     val message = stringResource(R.string.permission_description)
     val actionLabel = stringResource(R.string.go_to_settings)
 
-    val launcher =
+    val launcherForActivityResult =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 @Suppress("DEPRECATION")
@@ -151,6 +155,22 @@ fun Geomac() {
                 }
             }
         }
+
+    val saveText = stringResource(R.string.successfully_saved)
+
+    val fileSaverLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault()
+    ) { file ->
+        file?.let {
+            coroutineScope.launch {
+                withContext(Dispatchers.IO) {
+                    viewModel.saveFile(it)
+                }
+
+                context.showToast(text = saveText)
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = {
@@ -384,7 +404,7 @@ fun Geomac() {
                                     isWifiScanSheetOpened = true
                                 }
                             } else {
-                                launcher.launch(wifiScanPermissionState.permission)
+                                launcherForActivityResult.launch(wifiScanPermissionState.permission)
                             }
                         }
                     ) {
@@ -398,22 +418,15 @@ fun Geomac() {
             ) {
                 IconButton(
                     onClick = {
-                        TODO()
+                        fileSaverLauncher.launch(
+                            suggestedName = "geomac",
+                            defaultExtension = "json",
+                            allowedExtensions = setOf("json"),
+                        )
                     }
                 ) {
                     Icon(
                         painterResource(R.drawable.save_as_24px),
-                        contentDescription = null
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        TODO()
-                    }
-                ) {
-                    Icon(
-                        painterResource(R.drawable.backup_24px),
                         contentDescription = null
                     )
                 }

@@ -81,6 +81,8 @@ dependencies {
     implementation(libs.room.paging)
     implementation(libs.room.runtime)
     implementation(libs.accompanist.permissions)
+    implementation(libs.filekit.core)
+    implementation(libs.filekit.dialogs.compose)
 
     ksp(libs.room.compiler)
 }

@@ -22,4 +22,5 @@
     <string name="unknown_ssid">Unknown SSID</string>
     <string name="permission_description">Wi-Fi scanning requires location permission</string>
     <string name="go_to_settings">Go to settings</string>
+    <string name="successfully_saved">Successfully saved</string>
 </resources>

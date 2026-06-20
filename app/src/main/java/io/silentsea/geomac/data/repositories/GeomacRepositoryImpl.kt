@@ -118,6 +118,10 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
             geomacDao.undo(*items.distinctBy { item -> item.mac }.toTypedArray())
         }
 
+    override suspend fun getAll(): List<GeomacItemWithCoordinates> = withContext(Dispatchers.IO) {
+        geomacDao.getAll()
+    }
+
     override fun getAllInRanges(vararg ranges: Pair<Long, Long>): PagingSource<Int, GeomacItemWithCoordinates> =
         geomacDao.getAll(
             RoomRawQuery(

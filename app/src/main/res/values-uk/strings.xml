@@ -18,4 +18,5 @@
     <string name="unknown_ssid">Невідомий SSID</string>
     <string name="permission_description">Для сканування Wi-Fi потрібен дозвіл на доступ до місцезнаходження</string>
     <string name="go_to_settings">Перейти до налаштувань</string>
+    <string name="successfully_saved">Успішно збережено</string>
 </resources>

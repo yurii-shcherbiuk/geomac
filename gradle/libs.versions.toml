@@ -2,17 +2,18 @@
 accompanist = "0.37.3"
 activity-compose = "1.13.0"
 agp = "9.2.1"
-compose-bom = "2026.05.01"
+compose-bom = "2026.06.00"
 core-ktx = "1.19.0"
 core-splashscreen = "1.2.0"
-koin = "4.2.1"
+filekit = "0.14.2"
+koin = "4.2.2"
 kotlin = "2.4.0"
 kotlinx-datetime = "0.8.0"
 kotlinx-serialization = "1.11.0"
 ksp = "2.3.9"
 ktor = "3.5.0"
-lifecycle = "2.10.0"
-material3 = "1.5.0-alpha21"
+lifecycle = "2.11.0"
+material3 = "1.5.0-alpha22"
 paging = "3.5.0"
 room = "2.8.4"
 version-catalog-update = "1.1.0"
@@ -31,6 +32,8 @@ androidx-paging-compose = { module = "androidx.paging:paging-compose", version.r
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
+filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }

@@ -29,6 +29,10 @@ interface GeomacDao {
     }
 
     @Transaction
+    @Query("SELECT * FROM GeomacItem")
+    suspend fun getAll(): List<GeomacItemWithCoordinates>
+
+    @Transaction
     @RawQuery(observedEntities = [GeomacItem::class, GeomacCoordinates::class])
     fun getAll(query: RoomRawQuery): PagingSource<Int, GeomacItemWithCoordinates>
 }

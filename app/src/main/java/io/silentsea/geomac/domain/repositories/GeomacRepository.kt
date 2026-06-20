@@ -11,5 +11,7 @@ interface GeomacRepository {
 
     suspend fun delete(vararg macs: Long)
 
+    suspend fun getAll(): List<GeomacItemWithCoordinates>
+
     fun getAllInRanges(vararg ranges: Pair<Long, Long>): PagingSource<Int, GeomacItemWithCoordinates>
 }
