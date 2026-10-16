@@ -52,7 +52,7 @@ data class MicrosoftRequest(
             val lfVersion: String,
             @XmlSerialName("ExtendedDeviceInfo")
             @XmlElement(false)
-            val extendedDeviceInfo: String
+            val extendedDeviceInfo: String = ""
         )
 
         @Serializable
@@ -78,7 +78,7 @@ data class MicrosoftRequest(
                 val bssId: String,
                 @XmlSerialName("rssi")
                 @XmlElement(false)
-                val rssi: String
+                val rssi: String = "-1"
             )
         }
     }

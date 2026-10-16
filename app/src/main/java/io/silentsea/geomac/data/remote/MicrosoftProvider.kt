@@ -33,15 +33,13 @@ class MicrosoftProvider(private val client: HttpClient) : LocationProvider {
                         platform = "Windows7",
                         deviceType = "PC",
                         osVersion = "7600.16695.amd64fre.win7_gdr.101026-1503",
-                        lfVersion = "9.0.8080.16413",
-                        extendedDeviceInfo = ""
+                        lfVersion = "9.0.8080.16413"
                     )
                 ),
                 beaconFingerprint = MicrosoftRequest.BeaconFingerprint(
                     detections = MicrosoftRequest.BeaconFingerprint.Detections(
                         wifi7 = MicrosoftRequest.BeaconFingerprint.Detections.Wifi7(
-                            bssId = mac.macString(),
-                            rssi = "-1"
+                            bssId = mac.macString()
                         )
                     )
                 )

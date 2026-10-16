@@ -40,8 +40,11 @@ class GoogleProvider(private val client: HttpClient) : LocationProvider {
             )
         ).gzip()
 
-        val data =
-            client.post(Const.GOOGLE) { setBody(googleRequestBody(request)) }.body<ByteArray>()
+        val data = client
+            .post(Const.GOOGLE) {
+                setBody(googleRequestBody(request))
+            }
+            .body<ByteArray>()
 
         val index = data.indexOf(GZIP_MAGIC)
         check(index != -1) { "Unexpected Google response" }

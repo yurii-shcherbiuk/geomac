@@ -23,7 +23,11 @@ class AppleProvider(private val client: HttpClient) : LocationProvider {
             AppleRequest(wifis = listOf(AppleRequest.Wifi(mac = mac.macString())))
         )
 
-        val data = client.post(Const.APPLE) { setBody(appleRequestBody(request)) }.body<ByteArray>()
+        val data = client
+            .post(Const.APPLE) {
+                setBody(appleRequestBody(request))
+            }
+            .body<ByteArray>()
 
         val index = data.indexOf(RESPONSE_MARKER)
         check(index != -1) { "Unexpected Apple response" }
