@@ -13,6 +13,7 @@ import io.silentsea.geomac.data.backup.toDomain
 import io.silentsea.geomac.data.db.GeomacDao
 import io.silentsea.geomac.data.db.entities.GeomacCoordinates
 import io.silentsea.geomac.data.db.entities.GeomacItem
+import io.silentsea.geomac.data.db.entities.GeomacItemWithCoordinates
 import io.silentsea.geomac.data.db.toDomain
 import io.silentsea.geomac.data.db.toEntity
 import io.silentsea.geomac.data.remote.LocationProvider
@@ -35,7 +36,6 @@ import kotlinx.io.asInputStream
 import kotlinx.io.asOutputStream
 import kotlinx.io.buffered
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 
@@ -84,7 +84,7 @@ class GeomacRepositoryImpl(
 
         val found = results.mapNotNull { it.getOrNull() }
 
-        geomacDao.upsertCoordinates(found)
+        geomacDao.upsert(listOf(GeomacItemWithCoordinates(mac, found)))
 
         found.size
     }
@@ -103,7 +103,6 @@ class GeomacRepositoryImpl(
 
         sink.buffered().use { buffered ->
             BackupJson.encodeToStream(
-                ListSerializer(BackupEntry.serializer()),
                 entries,
                 buffered.asOutputStream()
             )
@@ -115,8 +114,7 @@ class GeomacRepositoryImpl(
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun import(source: RawSource): Int = withContext(ioDispatcher) {
         val entries = source.buffered().use { buffered ->
-            BackupJson.decodeFromStream(
-                ListSerializer(BackupEntry.serializer()),
+            BackupJson.decodeFromStream<List<BackupEntry>>(
                 buffered.asInputStream()
             )
         }

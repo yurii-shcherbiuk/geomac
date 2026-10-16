@@ -14,6 +14,8 @@ import io.silentsea.geomac.domain.model.Service
 import io.silentsea.geomac.domain.model.macString
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlin.time.Clock
 
 class MicrosoftProvider(private val client: HttpClient) : LocationProvider {
@@ -21,7 +23,6 @@ class MicrosoftProvider(private val client: HttpClient) : LocationProvider {
 
     override suspend fun locate(mac: Long): Coordinates? {
         val request = XmlFormat.encodeToString(
-            MicrosoftRequest.serializer(),
             MicrosoftRequest(
                 requestHeader = MicrosoftRequest.RequestHeader(
                     timestamp = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
@@ -54,7 +55,7 @@ class MicrosoftProvider(private val client: HttpClient) : LocationProvider {
             }
             .body<String>()
 
-        val result = XmlFormat.decodeFromString(MicrosoftResponse.serializer(), data).result
+        val result = XmlFormat.decodeFromString<MicrosoftResponse>(data).result
         val location = result?.locationResult ?: return null
 
         val isReliable = result.responseStatus == "Success" &&

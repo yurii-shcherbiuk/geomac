@@ -22,7 +22,7 @@ class MylnikovProvider(private val client: HttpClient) : LocationProvider {
             }
             .body<String>()
 
-        val response = JsonFormat.decodeFromString(MylnikovResponse.serializer(), data).data
+        val response = JsonFormat.decodeFromString<MylnikovResponse>(data).data
 
         val latitude = response?.lat ?: return null
         val longitude = response.lon ?: return null

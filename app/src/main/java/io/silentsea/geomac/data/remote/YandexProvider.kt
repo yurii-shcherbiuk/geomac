@@ -11,6 +11,7 @@ import io.silentsea.geomac.data.remote.dto.YandexResponse
 import io.silentsea.geomac.domain.model.Coordinates
 import io.silentsea.geomac.domain.model.Service
 import io.silentsea.geomac.domain.model.macString
+import kotlinx.serialization.decodeFromString
 
 class YandexProvider(private val client: HttpClient) : LocationProvider {
     override val service = Service.YANDEX
@@ -26,7 +27,7 @@ class YandexProvider(private val client: HttpClient) : LocationProvider {
             if (e.response.status == HttpStatusCode.NotFound) return null else throw e
         }
 
-        val response = XmlFormat.decodeFromString(YandexResponse.serializer(), data)
+        val response = XmlFormat.decodeFromString<YandexResponse>(data)
 
         if (response.source != "FoundByWifi") return null
 

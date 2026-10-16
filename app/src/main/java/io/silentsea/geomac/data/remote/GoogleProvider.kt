@@ -9,9 +9,11 @@ import io.silentsea.geomac.data.remote.dto.GoogleRequest
 import io.silentsea.geomac.data.remote.dto.GoogleResponse
 import io.silentsea.geomac.domain.model.Coordinates
 import io.silentsea.geomac.domain.model.Service
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 
+@OptIn(ExperimentalSerializationApi::class)
 class GoogleProvider(private val client: HttpClient) : LocationProvider {
     override val service = Service.GOOGLE
 

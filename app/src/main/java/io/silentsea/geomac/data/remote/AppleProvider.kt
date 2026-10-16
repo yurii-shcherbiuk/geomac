@@ -10,9 +10,11 @@ import io.silentsea.geomac.data.remote.dto.AppleResponse
 import io.silentsea.geomac.domain.model.Coordinates
 import io.silentsea.geomac.domain.model.Service
 import io.silentsea.geomac.domain.model.macString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 
+@OptIn(ExperimentalSerializationApi::class)
 class AppleProvider(private val client: HttpClient) : LocationProvider {
     override val service = Service.APPLE
 
