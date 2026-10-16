@@ -21,17 +21,16 @@
    </thead>
    <tbody>
       <tr>
-         <td><img width="100%" src="https://github.com/user-attachments/assets/b3c9c928-527c-4e34-8b7e-6d8eaf0cb40e" /></td>
-         <td> <img width="100%" src="https://github.com/user-attachments/assets/794e7191-6e3c-4f89-a2e8-6e350436cf07" /></td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/a66c657e-ad71-47a1-99c7-35701e9281b6" /></td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/d2433625-60cd-44ff-8f46-57bc52dadb00" /></td>
       </tr>
       <tr>
-         <td><img width="100%" src="https://github.com/user-attachments/assets/8f368c01-f2cb-4a9c-a7f0-9711846e671d" /></td>
-         <td><img width="100%" src="https://github.com/user-attachments/assets/bbeb4aad-d95c-48c9-a92c-b0b52047e2aa" /></td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/fb9c8505-a238-49e0-bdba-8d6a87b8bce9" /></td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/56acd602-4e1a-4cc9-9a58-903df237ca96" /></td>
       </tr>
       <tr>
-         <td colspan="2">
-            <video controls src="https://github.com/user-attachments/assets/6115f97f-1534-48df-b3f1-c064427d1f8c"></video>
-         </td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/2eb4e273-431c-4d20-b9ae-ebbd7a1c65e7" /></td>
+         <td><img width="100%" src="https://github.com/user-attachments/assets/c5452cdd-c91c-4b95-a23c-9355aa1e74b2" /></td>
       </tr>
    </tbody>
 </table>
