@@ -85,49 +85,45 @@ class GeomacViewModel(
         }
         if (!isNew) return
 
-        viewModelScope.launch {
-            try {
-                if (searchUseCase(mac) == 0) _events.send(GeomacEvent.NotFound(mac))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _events.send(GeomacEvent.Failed(e))
-            } finally {
-                _searching.update { it - mac }
-            }
+        launchCatching(onFinally = { _searching.update { it - mac } }) {
+            if (searchUseCase(mac) == 0) GeomacEvent.NotFound(mac) else null
         }
     }
 
-    fun delete(item: Geomac) {
-        viewModelScope.launch {
-            deleteUseCase(item.mac)
-            _events.send(GeomacEvent.Deleted(item))
-        }
+    fun delete(item: Geomac) = launchCatching {
+        deleteUseCase(item.mac)
+        GeomacEvent.Deleted(item)
     }
 
-    fun undo(item: Geomac) {
-        viewModelScope.launch { undoUseCase(item) }
+    fun undo(item: Geomac) = launchCatching {
+        undoUseCase(item)
+        null
     }
 
-    fun export(file: PlatformFile) = runFileOperation(GeomacEvent::Exported) {
-        exportUseCase(file.sink(append = false))
+    fun export(file: PlatformFile) = launchCatching {
+        GeomacEvent.Exported(withContext(Dispatchers.IO) { exportUseCase(file.sink(append = false)) })
     }
 
-    fun import(file: PlatformFile) = runFileOperation(GeomacEvent::Imported) {
-        importUseCase(file.source())
+    fun import(file: PlatformFile) = launchCatching {
+        GeomacEvent.Imported(withContext(Dispatchers.IO) { importUseCase(file.source()) })
     }
 
-    private fun runFileOperation(onSuccess: (Int) -> GeomacEvent, block: suspend () -> Int) {
+    private fun launchCatching(
+        onFinally: () -> Unit = {},
+        block: suspend () -> GeomacEvent?
+    ) {
         viewModelScope.launch {
             val event = try {
-                onSuccess(withContext(Dispatchers.IO) { block() })
+                block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 GeomacEvent.Failed(e)
+            } finally {
+                onFinally()
             }
 
-            _events.send(event)
+            event?.let { _events.send(it) }
         }
     }
 }

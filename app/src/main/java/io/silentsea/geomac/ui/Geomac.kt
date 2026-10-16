@@ -120,6 +120,9 @@ fun Geomac(viewModel: GeomacViewModel = koinViewModel()) {
     val canSearchQuery by remember {
         derivedStateOf { textFieldState.text.length >= Mac.HEX_LENGTH }
     }
+    val hasQuery by remember {
+        derivedStateOf { textFieldState.text.isNotEmpty() }
+    }
 
     var error by remember { mutableStateOf<Throwable?>(null) }
 
@@ -291,7 +294,7 @@ fun Geomac(viewModel: GeomacViewModel = koinViewModel()) {
             GeomacContent(
                 lazyPagingItems = lazyPagingItems,
                 searching = searching,
-                hasQuery = textFieldState.text.isNotEmpty(),
+                hasQuery = hasQuery,
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     top = 8.dp,

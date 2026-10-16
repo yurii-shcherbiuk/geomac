@@ -54,27 +54,35 @@ class GeomacRepositoryImpl(
 
         geomacDao.upsertItems(listOf(GeomacItem(mac)))
 
-        val found = coroutineScope {
+        val results = coroutineScope {
             providers.map { provider ->
                 async {
                     try {
-                        provider.locate(mac)?.let { coordinates ->
-                            GeomacCoordinates(
-                                mac,
-                                provider.service,
-                                coordinates.latitude,
-                                coordinates.longitude
-                            )
-                        }
+                        Result.success(
+                            provider.locate(mac)?.let { coordinates ->
+                                GeomacCoordinates(
+                                    mac,
+                                    provider.service,
+                                    coordinates.latitude,
+                                    coordinates.longitude
+                                )
+                            }
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         Log.w(TAG, "${provider.service} failed for ${mac.macString()}", e)
-                        null
+                        Result.failure(e)
                     }
                 }
-            }.awaitAll().filterNotNull()
+            }.awaitAll()
         }
+
+        if (results.isNotEmpty() && results.all { it.isFailure }) {
+            throw results.first().exceptionOrNull()!!
+        }
+
+        val found = results.mapNotNull { it.getOrNull() }
 
         geomacDao.upsertCoordinates(found)
 

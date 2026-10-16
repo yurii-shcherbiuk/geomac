@@ -8,7 +8,8 @@ object Mac {
 
     val RANGE = 0L..MAX
 
-    fun isHexDigit(char: Char): Boolean = char.isDigit() || char.uppercaseChar() in 'A'..'F'
+    fun isHexDigit(char: Char): Boolean =
+        char in '0'..'9' || char in 'A'..'F' || char in 'a'..'f'
 
     fun sanitize(input: CharSequence): String = buildString(input.length) {
         input.forEach { char -> if (isHexDigit(char)) append(char.uppercaseChar()) }

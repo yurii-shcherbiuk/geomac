@@ -30,9 +30,12 @@ val BackupJson = Json {
     explicitNulls = false
 }
 
+private fun Coordinates.toBackup() = BackupCoordinates(latitude, longitude)
+
+private fun BackupCoordinates.toDomain() = Coordinates(latitude, longitude)
+
 fun Geomac.toBackup(): BackupEntry {
-    fun of(service: Service) =
-        locations[service]?.let { BackupCoordinates(it.latitude, it.longitude) }
+    fun of(service: Service) = locations[service]?.toBackup()
 
     return BackupEntry(
         mac = mac.macString(),
@@ -47,13 +50,13 @@ fun Geomac.toBackup(): BackupEntry {
 fun BackupEntry.toDomain(): Geomac? {
     val mac = Mac.parse(mac) ?: return null
 
-    val locations = buildMap {
-        apple?.let { put(Service.APPLE, Coordinates(it.latitude, it.longitude)) }
-        google?.let { put(Service.GOOGLE, Coordinates(it.latitude, it.longitude)) }
-        microsoft?.let { put(Service.MICROSOFT, Coordinates(it.latitude, it.longitude)) }
-        mylnikov?.let { put(Service.MYLNIKOV, Coordinates(it.latitude, it.longitude)) }
-        yandex?.let { put(Service.YANDEX, Coordinates(it.latitude, it.longitude)) }
-    }
+    val locations = mapOf(
+        Service.APPLE to apple,
+        Service.GOOGLE to google,
+        Service.MICROSOFT to microsoft,
+        Service.MYLNIKOV to mylnikov,
+        Service.YANDEX to yandex
+    ).mapNotNull { (service, coordinates) -> coordinates?.let { service to it.toDomain() } }
 
-    return Geomac(mac, locations)
+    return Geomac(mac, locations.toMap())
 }
