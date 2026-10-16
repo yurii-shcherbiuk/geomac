@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.paging.runtime)
@@ -72,6 +73,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.xmlutil.core)
@@ -79,7 +81,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.room3.paging)
     implementation(libs.room3.runtime)
-    implementation(libs.accompanist.permissions)
     implementation(libs.filekit.core)
     implementation(libs.filekit.dialogs.compose)
 

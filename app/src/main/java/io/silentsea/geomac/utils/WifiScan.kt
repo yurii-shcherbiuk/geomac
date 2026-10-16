@@ -1,5 +1,6 @@
 package io.silentsea.geomac.utils
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,25 +17,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 
+@SuppressLint("MissingPermission")
 @Composable
-fun rememberWifiScanResults(
-    intervalMillis: Long = 10_000L
-): List<ScanResult> {
+fun rememberWifiScanResults(intervalMillis: Long = 10_000L): List<ScanResult> {
     val context = LocalContext.current
-
-    val wifiManager = context.getSystemService(WifiManager::class.java)
+    val wifiManager = remember(context) { context.getSystemService(WifiManager::class.java) }
 
     var scanResults by remember { mutableStateOf(emptyList<ScanResult>()) }
 
+    fun update() {
+        scanResults = wifiManager.scanResults
+            .distinctBy { it.BSSID }
+            .sortedByDescending { it.level }
+    }
+
     DisposableEffect(wifiManager) {
+        update()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val callback = object : WifiManager.ScanResultsCallback() {
-                override fun onScanResultsAvailable() {
-                    @Suppress("MissingPermission")
-                    scanResults = wifiManager.scanResults.sortedByDescending { it.level }
-                }
+                override fun onScanResultsAvailable() = update()
             }
 
             wifiManager.registerScanResultsCallback(context.mainExecutor, callback)
@@ -42,28 +45,20 @@ fun rememberWifiScanResults(
             onDispose { runCatching { wifiManager.unregisterScanResultsCallback(callback) } }
         } else {
             val receiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context, intent: Intent) {
-                    if (intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false)) {
-                        @Suppress("MissingPermission")
-                        scanResults = wifiManager.scanResults.sortedByDescending { it.level }
-                    }
-                }
+                override fun onReceive(context: Context, intent: Intent) = update()
             }
 
-            val filter = IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
-            } else {
-                context.registerReceiver(receiver, filter)
-            }
+            context.registerReceiver(
+                receiver,
+                IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+            )
 
             onDispose { runCatching { context.unregisterReceiver(receiver) } }
         }
     }
 
     LaunchedEffect(wifiManager, intervalMillis) {
-        while (isActive) {
+        while (true) {
             @Suppress("DEPRECATION")
             wifiManager.startScan()
             delay(intervalMillis)
@@ -72,3 +67,19 @@ fun rememberWifiScanResults(
 
     return scanResults
 }
+
+val ScanResult.ssid: String?
+    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        wifiSsid?.toString()?.removeSurrounding("\"")
+    } else {
+        @Suppress("DEPRECATION")
+        SSID
+    }?.takeIf { it.isNotBlank() }
+
+fun WifiManager.signalBars(result: ScanResult): Int =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        calculateSignalLevel(result.level) * 2 / maxSignalLevel.coerceAtLeast(1)
+    } else {
+        @Suppress("DEPRECATION")
+        WifiManager.calculateSignalLevel(result.level, 3)
+    }

@@ -1,17 +1,21 @@
 package io.silentsea.geomac.domain.repositories
 
-import androidx.paging.PagingSource
-import io.silentsea.geomac.data.db.entities.GeomacItemWithCoordinates
+import androidx.paging.PagingData
+import io.silentsea.geomac.domain.model.Geomac
 import kotlinx.coroutines.flow.Flow
+import kotlinx.io.RawSink
+import kotlinx.io.RawSource
 
 interface GeomacRepository {
-    fun search(vararg macs: Long): Flow<Long>
+    fun observe(ranges: List<LongRange>): Flow<PagingData<Geomac>>
 
-    suspend fun undo(vararg items: GeomacItemWithCoordinates)
+    suspend fun search(mac: Long): Int
 
-    suspend fun delete(vararg macs: Long)
+    suspend fun delete(mac: Long)
 
-    suspend fun getAll(): List<GeomacItemWithCoordinates>
+    suspend fun restore(item: Geomac)
 
-    fun getAllInRanges(vararg ranges: Pair<Long, Long>): PagingSource<Int, GeomacItemWithCoordinates>
+    suspend fun export(sink: RawSink): Int
+
+    suspend fun import(source: RawSource): Int
 }

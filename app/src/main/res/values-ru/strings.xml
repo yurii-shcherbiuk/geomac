@@ -8,15 +8,44 @@
     <string name="mac_search">Поиск MAC-адреса</string>
     <string name="mac_copied">MAC-адрес скопирован в буфер обмена</string>
     <string name="mac_deleted">Удалено %1$s</string>
+    <string name="mac_not_found">%1$s не найден ни одним сервисом</string>
+    <string name="invalid_mac">Введите полный MAC-адрес — 12 шестнадцатеричных цифр</string>
+    <string name="found_by">Найдено сервисами: %1$d из %2$d</string>
+    <string name="searching">Поиск…</string>
     <string name="undo">Отменить</string>
     <string name="empty">Здесь пока ничего нет</string>
+    <string name="empty_hint">Найдите MAC-адрес или просканируйте ближайшие сети Wi-Fi</string>
+    <string name="no_matches">Нет сохранённых совпадений</string>
+    <string name="no_matches_hint">Нажмите «Поиск» на клавиатуре, чтобы найти этот адрес</string>
     <string name="error">Неизвестная ошибка</string>
+    <string name="details">Подробнее</string>
     <string name="show_stack_trace">Показать трассировку стека</string>
     <string name="stack_trace">Трассировка стека</string>
+    <string name="copy">Копировать</string>
+    <string name="clear">Очистить</string>
+    <string name="refresh">Обновить</string>
+    <string name="delete">Удалить</string>
+    <string name="open_in_maps">Открыть на карте</string>
+    <string name="no_maps_app">Не найдено приложение карт</string>
+    <string name="export_backup">Экспорт</string>
+    <string name="import_backup">Импорт</string>
     <string name="wifi_scan">Сканирование Wi-Fi</string>
+    <string name="wifi_scan_hint">Поиск ближайших сетей…</string>
     <string name="turn_on_wifi">Включите Wi-Fi</string>
+    <string name="turn_on_location">Включите геолокацию, чтобы сканировать сети Wi-Fi</string>
     <string name="unknown_ssid">Неизвестный SSID</string>
     <string name="permission_description">Для сканирования Wi-Fi требуется разрешение на определение местоположения</string>
     <string name="go_to_settings">Перейти в настройки</string>
-    <string name="successfully_saved">Успешно сохранено</string>
+    <plurals name="exported">
+        <item quantity="one">Экспортирован %1$d адрес</item>
+        <item quantity="few">Экспортировано %1$d адреса</item>
+        <item quantity="many">Экспортировано %1$d адресов</item>
+        <item quantity="other">Экспортировано %1$d адреса</item>
+    </plurals>
+    <plurals name="imported">
+        <item quantity="one">Импортирован %1$d адрес</item>
+        <item quantity="few">Импортировано %1$d адреса</item>
+        <item quantity="many">Импортировано %1$d адресов</item>
+        <item quantity="other">Импортировано %1$d адреса</item>
+    </plurals>
 </resources>

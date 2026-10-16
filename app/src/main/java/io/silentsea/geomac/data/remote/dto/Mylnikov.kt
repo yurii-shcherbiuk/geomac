@@ -1,4 +1,4 @@
-package io.silentsea.geomac.domain.entites
+package io.silentsea.geomac.data.remote.dto
 
 import kotlinx.serialization.Serializable
 

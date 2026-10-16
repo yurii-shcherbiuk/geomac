@@ -5,6 +5,7 @@
     <string name="microsoft" translatable="false">Microsoft</string>
     <string name="mylnikov" translatable="false">Mylnikov</string>
     <string name="yandex">Yandex</string>
+    <string name="found_ratio" translatable="false">%1$d/%2$d</string>
     <string name="not_found">Not found</string>
     <string name="coordinates">%1$s coordinates</string>
     <string name="coordinates_copied">%1$s coordinates copied to clipboard</string>
@@ -12,15 +13,40 @@
     <string name="mac_search">Search MAC address</string>
     <string name="mac_copied">MAC address copied to clipboard</string>
     <string name="mac_deleted">%1$s deleted</string>
+    <string name="mac_not_found">%1$s wasn\'t found by any service</string>
+    <string name="invalid_mac">Enter a full MAC address — 12 hex digits</string>
+    <string name="found_by">Found by %1$d of %2$d services</string>
+    <string name="searching">Searching…</string>
     <string name="undo">Undo</string>
     <string name="empty">There is nothing here yet</string>
+    <string name="empty_hint">Search for a MAC address or scan nearby Wi-Fi networks</string>
+    <string name="no_matches">No saved matches</string>
+    <string name="no_matches_hint">Press search on the keyboard to look this address up</string>
     <string name="error">Unknown error</string>
+    <string name="details">Details</string>
     <string name="show_stack_trace">Show stack trace</string>
     <string name="stack_trace">Stack trace</string>
+    <string name="copy">Copy</string>
+    <string name="clear">Clear</string>
+    <string name="refresh">Refresh</string>
+    <string name="delete">Delete</string>
+    <string name="open_in_maps">Open in maps</string>
+    <string name="no_maps_app">No app found to open maps</string>
+    <string name="export_backup">Export</string>
+    <string name="import_backup">Import</string>
     <string name="wifi_scan">Wi-Fi scanning</string>
+    <string name="wifi_scan_hint">Looking for nearby networks…</string>
     <string name="turn_on_wifi">Turn on Wi-Fi</string>
+    <string name="turn_on_location">Turn on location to scan Wi-Fi networks</string>
     <string name="unknown_ssid">Unknown SSID</string>
     <string name="permission_description">Wi-Fi scanning requires location permission</string>
     <string name="go_to_settings">Go to settings</string>
-    <string name="successfully_saved">Successfully saved</string>
+    <plurals name="exported">
+        <item quantity="one">%1$d address exported</item>
+        <item quantity="other">%1$d addresses exported</item>
+    </plurals>
+    <plurals name="imported">
+        <item quantity="one">%1$d address imported</item>
+        <item quantity="other">%1$d addresses imported</item>
+    </plurals>
 </resources>

@@ -2,100 +2,132 @@ package io.silentsea.geomac.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.sink
-import io.silentsea.geomac.data.db.entities.GeomacItemWithCoordinates
+import io.github.vinceglb.filekit.source
+import io.silentsea.geomac.domain.model.Geomac
+import io.silentsea.geomac.domain.model.Mac
 import io.silentsea.geomac.domain.usecases.DeleteUseCase
+import io.silentsea.geomac.domain.usecases.ExportUseCase
 import io.silentsea.geomac.domain.usecases.GetAllInRangesUseCase
-import io.silentsea.geomac.domain.usecases.GetAllUseCase
+import io.silentsea.geomac.domain.usecases.ImportUseCase
 import io.silentsea.geomac.domain.usecases.SearchUseCase
 import io.silentsea.geomac.domain.usecases.UndoUseCase
-import io.silentsea.geomac.utils.toGeomac
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.io.asOutputStream
-import kotlinx.io.buffered
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToStream
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class GeomacViewModel : ViewModel(), KoinComponent {
-    private val searchUseCase: SearchUseCase by inject()
-    private val deleteUseCase: DeleteUseCase by inject()
-    private val undoUseCase: UndoUseCase by inject()
-    private val getAllUseCase: GetAllUseCase by inject()
-    private val getAllInRangesUseCase: GetAllInRangesUseCase by inject()
+sealed interface GeomacEvent {
+    data object InvalidMac : GeomacEvent
+    data class NotFound(val mac: Long) : GeomacEvent
+    data class Deleted(val item: Geomac) : GeomacEvent
+    data class Exported(val count: Int) : GeomacEvent
+    data class Imported(val count: Int) : GeomacEvent
+    data class Failed(val error: Throwable) : GeomacEvent
+}
 
-
-    private val _input = MutableStateFlow("")
+class GeomacViewModel(
+    private val searchUseCase: SearchUseCase,
+    private val deleteUseCase: DeleteUseCase,
+    private val undoUseCase: UndoUseCase,
+    getAllInRangesUseCase: GetAllInRangesUseCase,
+    private val exportUseCase: ExportUseCase,
+    private val importUseCase: ImportUseCase
+) : ViewModel() {
+    private val query = MutableStateFlow("")
 
     private val _searching = MutableStateFlow(emptySet<Long>())
-    val searching = _searching.asStateFlow()
+    val searching: StateFlow<Set<Long>> = _searching.asStateFlow()
 
-    fun setInput(input: String) {
-        _input.update { input }
-    }
+    private val _events = Channel<GeomacEvent>(Channel.BUFFERED)
+    val events: Flow<GeomacEvent> = _events.receiveAsFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val pagingFlow = _input
-        .flatMapLatest { input ->
-            Pager(
-                PagingConfig(pageSize = 5)
-            ) {
-                getAllInRangesUseCase(
-                    *input
-                        .chunked(12)
-                        .map { mac ->
-                            mac.padEnd(12, '0').toLong(16) to mac.padEnd(12, 'F').toLong(16)
-                        }
-                        .toTypedArray()
-                )
-            }.flow
-        }
+    val items: Flow<PagingData<Geomac>> = query
+        .map(Mac::prefixRanges)
+        .distinctUntilChanged()
+        .flatMapLatest { ranges -> getAllInRangesUseCase(ranges) }
         .cachedIn(viewModelScope)
 
-    suspend fun search(
-        vararg macs: Long = _input.value
-            .chunked(12)
-            .map { mac ->
-                mac
-                    .padEnd(12, '0')
-                    .toLong(16)
-            }
-            .toLongArray()
-    ) = macs
-        .filter { mac -> !_searching.value.contains(mac) }
-        .also { filteredMacs ->
-            _searching.update { it + filteredMacs }
+    fun onQueryChange(input: String) {
+        query.value = input
+    }
 
-            searchUseCase(*filteredMacs.toLongArray()).collect { mac ->
+    fun searchQuery() {
+        val macs = Mac.parseAll(query.value)
+
+        if (macs.isEmpty()) {
+            _events.trySend(GeomacEvent.InvalidMac)
+        } else {
+            macs.forEach(::search)
+        }
+    }
+
+    fun search(mac: Long) {
+        var isNew = false
+        _searching.update { searching ->
+            isNew = mac !in searching
+            if (isNew) searching + mac else searching
+        }
+        if (!isNew) return
+
+        viewModelScope.launch {
+            try {
+                if (searchUseCase(mac) == 0) _events.send(GeomacEvent.NotFound(mac))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _events.send(GeomacEvent.Failed(e))
+            } finally {
                 _searching.update { it - mac }
             }
         }
+    }
 
+    fun delete(item: Geomac) {
+        viewModelScope.launch {
+            deleteUseCase(item.mac)
+            _events.send(GeomacEvent.Deleted(item))
+        }
+    }
 
-    suspend fun delete(vararg macs: Long) = deleteUseCase(*macs)
+    fun undo(item: Geomac) {
+        viewModelScope.launch { undoUseCase(item) }
+    }
 
-    suspend fun undo(vararg items: GeomacItemWithCoordinates) = undoUseCase(*items)
+    fun export(file: PlatformFile) = runFileOperation(GeomacEvent::Exported) {
+        exportUseCase(file.sink(append = false))
+    }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    suspend fun saveFile(file: PlatformFile) {
-        val data = getAllUseCase().map { it.toGeomac() }
+    fun import(file: PlatformFile) = runFileOperation(GeomacEvent::Imported) {
+        importUseCase(file.source())
+    }
 
-        val json = Json { prettyPrint = true }
+    private fun runFileOperation(onSuccess: (Int) -> GeomacEvent, block: suspend () -> Int) {
+        viewModelScope.launch {
+            val event = try {
+                onSuccess(withContext(Dispatchers.IO) { block() })
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                GeomacEvent.Failed(e)
+            }
 
-        val sink = file.sink(append = false).buffered()
-
-        sink.use { bufferedSink ->
-            json.encodeToStream(data, bufferedSink.asOutputStream())
+            _events.send(event)
         }
     }
 }

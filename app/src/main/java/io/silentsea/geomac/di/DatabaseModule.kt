@@ -7,11 +7,8 @@ import org.koin.dsl.module
 
 val databaseModule = module {
     single {
-        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "geomac-db")
-            .build()
+        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "geomac-db").build()
     }
 
-    single {
-        get<AppDatabase>().geomacHistoryDao()
-    }
+    single { get<AppDatabase>().geomacDao() }
 }

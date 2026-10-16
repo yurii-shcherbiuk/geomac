@@ -17,25 +17,25 @@ import io.silentsea.geomac.data.db.entities.GeomacItemWithCoordinates
 @DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
 interface GeomacDao {
     @Upsert
-    suspend fun upsert(vararg items: GeomacItem)
+    suspend fun upsertItems(items: List<GeomacItem>)
 
     @Upsert
-    suspend fun upsert(vararg items: GeomacCoordinates)
+    suspend fun upsertCoordinates(coordinates: List<GeomacCoordinates>)
 
-    @Query("DELETE FROM GeomacItem WHERE mac IN (:macs)")
-    suspend fun delete(vararg macs: Long)
+    @Query("DELETE FROM GeomacItem WHERE mac = :mac")
+    suspend fun delete(mac: Long)
 
     @Transaction
-    suspend fun undo(vararg items: GeomacItemWithCoordinates) = items.forEach { item ->
-        upsert(GeomacItem(mac = item.mac))
-        upsert(*item.coordinates.toTypedArray())
+    suspend fun upsert(items: List<GeomacItemWithCoordinates>) {
+        upsertItems(items.map { item -> GeomacItem(item.mac) })
+        upsertCoordinates(items.flatMap { item -> item.coordinates })
     }
 
     @Transaction
-    @Query("SELECT * FROM GeomacItem")
+    @Query("SELECT * FROM GeomacItem ORDER BY mac ASC")
     suspend fun getAll(): List<GeomacItemWithCoordinates>
 
     @Transaction
     @RawQuery(observedEntities = [GeomacItem::class, GeomacCoordinates::class])
-    fun getAll(query: RoomRawQuery): PagingSource<Int, GeomacItemWithCoordinates>
+    fun getPage(query: RoomRawQuery): PagingSource<Int, GeomacItemWithCoordinates>
 }

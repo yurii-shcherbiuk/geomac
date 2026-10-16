@@ -2,16 +2,18 @@ package io.silentsea.geomac.ui
 
 import android.Manifest
 import android.content.Intent
-import android.net.Uri
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,433 +22,358 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FloatingToolbarExitDirection
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import io.silentsea.geomac.R
-import io.silentsea.geomac.ui.components.Card
+import io.silentsea.geomac.domain.model.Coordinates
+import io.silentsea.geomac.domain.model.Geomac
+import io.silentsea.geomac.domain.model.Mac
+import io.silentsea.geomac.domain.model.Service
+import io.silentsea.geomac.domain.model.macString
+import io.silentsea.geomac.ui.components.EmptyState
 import io.silentsea.geomac.ui.components.ErrorSheet
-import io.silentsea.geomac.ui.components.InputTextField
+import io.silentsea.geomac.ui.components.GeomacCard
+import io.silentsea.geomac.ui.components.SearchField
 import io.silentsea.geomac.ui.components.WifiScanSheet
-import io.silentsea.geomac.utils.macString
-import io.silentsea.geomac.utils.showToast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
+import io.silentsea.geomac.ui.model.labelRes
+import io.silentsea.geomac.utils.canScan
+import io.silentsea.geomac.utils.isLocationEnabled
+import io.silentsea.geomac.utils.openAppSettings
+import io.silentsea.geomac.utils.openLocationSettings
+import io.silentsea.geomac.utils.openMap
+import io.silentsea.geomac.utils.showsClipboardConfirmation
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Geomac() {
+fun Geomac(viewModel: GeomacViewModel = koinViewModel()) {
     val context = LocalContext.current
-
+    val resources = LocalResources.current
+    val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
-
-    val viewModel = viewModel { GeomacViewModel() }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val searching by viewModel.searching.collectAsState()
-    val lazyPagingItems = viewModel.pagingFlow.collectAsLazyPagingItems()
+    val searching by viewModel.searching.collectAsStateWithLifecycle()
+    val lazyPagingItems = viewModel.items.collectAsLazyPagingItems()
 
     val textFieldState = rememberTextFieldState()
+    val searchBarState = rememberSearchBarState()
+    var isSearchFocused by remember { mutableStateOf(false) }
 
-    LaunchedEffect(textFieldState) {
-        snapshotFlow { textFieldState.text }.collectLatest { input ->
-            viewModel.setInput(input.toString())
-        }
+    val canSearchQuery by remember {
+        derivedStateOf { textFieldState.text.length >= Mac.HEX_LENGTH }
     }
-
-    var isFocused by remember { mutableStateOf(false) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
     var error by remember { mutableStateOf<Throwable?>(null) }
 
-    var swiped by remember { mutableStateOf<Long?>(null) }
+    fun showSnackbar(
+        message: String,
+        actionLabel: String? = null,
+        onAction: () -> Unit = {}
+    ) {
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = actionLabel,
+                withDismissAction = actionLabel == null,
+                duration = if (actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
+            )
 
-    val wifiManager = context.getSystemService(WifiManager::class.java)
-    var isWifiScanSheetOpened by remember { mutableStateOf(false) }
-    val wifiScanPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-
-    val text = stringResource(R.string.turn_on_wifi)
-    val message = stringResource(R.string.permission_description)
-    val actionLabel = stringResource(R.string.go_to_settings)
-
-    val launcherForActivityResult =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                @Suppress("DEPRECATION")
-                if (wifiManager.isWifiEnabled || (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && wifiManager.isScanAlwaysAvailable)) {
-                    isWifiScanSheetOpened = true
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    context.showToast(text = text)
-
-                    context.startActivity(
-                        Intent(Settings.Panel.ACTION_WIFI)
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    wifiManager.isWifiEnabled = true
-                    isWifiScanSheetOpened = true
-                }
-            } else {
-                coroutineScope.launch {
-                    val result = snackbarHostState.showSnackbar(
-                        message = message,
-                        actionLabel = actionLabel,
-                        duration = SnackbarDuration.Long
-                    )
-
-                    if (result == SnackbarResult.ActionPerformed) {
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts(
-                                "package",
-                                context.packageName,
-                                null
-                            )
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(this)
-                        }
-                    }
-                }
-            }
+            if (result == SnackbarResult.ActionPerformed) onAction()
         }
+    }
 
-    val saveText = stringResource(R.string.successfully_saved)
+    fun clearFocus() = focusManager.clearFocus()
 
-    val fileSaverLauncher = rememberFileSaverLauncher(
-        dialogSettings = FileKitDialogSettings.createDefault()
-    ) { file ->
-        file?.let {
-            coroutineScope.launch {
-                withContext(Dispatchers.IO) {
-                    viewModel.saveFile(it)
-                }
+    LaunchedEffect(textFieldState) {
+        snapshotFlow { textFieldState.text.toString() }.collect(viewModel::onQueryChange)
+    }
 
-                context.showToast(text = saveText)
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                GeomacEvent.InvalidMac -> showSnackbar(resources.getString(R.string.invalid_mac))
+
+                is GeomacEvent.NotFound -> showSnackbar(
+                    resources.getString(R.string.mac_not_found, event.mac.macString())
+                )
+
+                is GeomacEvent.Deleted -> showSnackbar(
+                    message = resources.getString(R.string.mac_deleted, event.item.mac.macString()),
+                    actionLabel = resources.getString(R.string.undo)
+                ) { viewModel.undo(event.item) }
+
+                is GeomacEvent.Exported -> showSnackbar(
+                    resources.getQuantityString(R.plurals.exported, event.count, event.count)
+                )
+
+                is GeomacEvent.Imported -> showSnackbar(
+                    resources.getQuantityString(R.plurals.imported, event.count, event.count)
+                )
+
+                is GeomacEvent.Failed -> showSnackbar(
+                    message = event.error.localizedMessage ?: resources.getString(R.string.error),
+                    actionLabel = resources.getString(R.string.details)
+                ) { error = event.error }
             }
         }
     }
 
+    val wifiManager = remember(context) { context.getSystemService(WifiManager::class.java) }
+    var isWifiScanSheetOpened by rememberSaveable { mutableStateOf(false) }
+    var isWaitingForWifi by rememberSaveable { mutableStateOf(false) }
+
+    fun openWifiScan() {
+        when {
+            !context.isLocationEnabled -> showSnackbar(
+                message = resources.getString(R.string.turn_on_location),
+                actionLabel = resources.getString(R.string.go_to_settings)
+            ) { context.openLocationSettings() }
+
+            wifiManager.canScan -> isWifiScanSheetOpened = true
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                isWaitingForWifi = true
+                showSnackbar(resources.getString(R.string.turn_on_wifi))
+                context.startActivity(Intent(Settings.Panel.ACTION_WIFI))
+            }
+
+            else -> {
+                @Suppress("DEPRECATION")
+                wifiManager.isWifiEnabled = true
+                isWifiScanSheetOpened = true
+            }
+        }
+    }
+
+    LifecycleResumeEffect(isWaitingForWifi) {
+        if (isWaitingForWifi && wifiManager.canScan) {
+            isWaitingForWifi = false
+            isWifiScanSheetOpened = true
+        }
+
+        onPauseOrDispose {}
+    }
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                openWifiScan()
+            } else {
+                showSnackbar(
+                    message = resources.getString(R.string.permission_description),
+                    actionLabel = resources.getString(R.string.go_to_settings)
+                ) { context.openAppSettings() }
+            }
+        }
+
+    fun onWifiScanClick() {
+        val permission = Manifest.permission.ACCESS_FINE_LOCATION
+
+        if (ContextCompat.checkSelfPermission(
+                context,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            openWifiScan()
+        } else {
+            permissionLauncher.launch(permission)
+        }
+    }
+
+    val exportLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault()
+    ) { file -> file?.let(viewModel::export) }
+    val importLauncher = rememberFilePickerLauncher { file -> file?.let(viewModel::import) }
+
+    val searchScrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
+    val toolbarScrollBehavior = FloatingToolbarDefaults.exitAlwaysScrollBehavior(
+        exitDirection = FloatingToolbarExitDirection.Bottom
+    )
+
+    val bottomContentPadding =
+        FloatingToolbarDefaults.ContainerSize + FloatingToolbarDefaults.ScreenOffset * 2
+
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
+            .nestedScroll(searchScrollBehavior.nestedScrollConnection)
+            .nestedScroll(toolbarScrollBehavior),
+        topBar = {
+            AppBarWithSearch(
+                state = searchBarState,
+                scrollBehavior = searchScrollBehavior,
+                inputField = {
+                    SearchField(
+                        textFieldState = textFieldState,
+                        searchBarState = searchBarState,
+                        onSearch = {
+                            clearFocus()
+                            viewModel.searchQuery()
+                        },
+                        modifier = Modifier.onFocusChanged { isSearchFocused = it.isFocused }
+                    )
+                }
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = bottomContentPadding)
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
-                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding())
                 .consumeWindowInsets(innerPadding)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    enabled = isFocused
-                ) {
-                    keyboardController?.hide()
-                    focusManager.clearFocus(true)
-                },
-            contentAlignment = Alignment.BottomCenter
+                .imePadding()
+                .pointerInput(Unit) { detectTapGestures { clearFocus() } }
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                InputTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    textFieldState = textFieldState,
-                    onSearch = {
-                        coroutineScope.launch {
-                            viewModel.search()
-                        }
-                    },
-                    onFocusChanged = {
-                        isFocused = it
+            GeomacContent(
+                lazyPagingItems = lazyPagingItems,
+                searching = searching,
+                hasQuery = textFieldState.text.isNotEmpty(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 8.dp,
+                    end = 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + bottomContentPadding
+                ),
+                onRefresh = viewModel::search,
+                onDelete = viewModel::delete,
+                onOpenMap = { item, service, coordinates ->
+                    val label = "${resources.getString(service.labelRes)} · ${item.mac.macString()}"
+
+                    if (!context.openMap(coordinates, label)) {
+                        showSnackbar(resources.getString(R.string.no_maps_app))
                     }
-                )
-
-                HorizontalDivider()
-
-                Crossfade(
-                    targetState = lazyPagingItems.loadState.refresh,
-                ) { refreshState ->
-                    when (refreshState) {
-                        is LoadState.Error -> {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(
-                                    8.dp,
-                                    Alignment.CenterVertically
-                                )
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.error),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.headlineSmall
-                                )
-
-                                TextButton(
-                                    onClick = {
-                                        error = refreshState.error
-                                    }
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.show_stack_trace)
-                                    )
-                                }
-                            }
-                        }
-
-                        is LoadState.Loading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                LoadingIndicator()
-                            }
-                        }
-
-                        is LoadState.NotLoading -> {
-                            Crossfade(
-                                targetState = lazyPagingItems.itemCount > 0
-                            ) { isNotEmpty ->
-                                if (isNotEmpty) {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        contentPadding = PaddingValues(
-                                            start = 16.dp,
-                                            top = 16.dp,
-                                            end = 16.dp,
-                                            bottom = 16.dp + FloatingToolbarDefaults.ContainerSize + 8.dp
-                                        ),
-                                    ) {
-                                        items(
-                                            lazyPagingItems.itemCount,
-                                            key = lazyPagingItems.itemKey { it.mac }
-                                        ) { index ->
-                                            lazyPagingItems[index]?.let { item ->
-                                                val message = stringResource(
-                                                    R.string.mac_deleted,
-                                                    item.mac.macString()
-                                                )
-                                                val actionLabel = stringResource(R.string.undo)
-
-                                                Card(
-                                                    item = item,
-                                                    isSearching = searching.contains(item.mac),
-                                                    isSwiped = swiped == item.mac,
-                                                    onDelete = {
-                                                        coroutineScope.launch {
-                                                            viewModel.delete(item.mac)
-
-                                                            val result = snackbarHostState
-                                                                .showSnackbar(
-                                                                    message = message,
-                                                                    actionLabel = actionLabel,
-                                                                    duration = SnackbarDuration.Long
-                                                                )
-
-                                                            if (result == SnackbarResult.ActionPerformed) {
-                                                                viewModel.undo(item)
-                                                            }
-                                                        }
-                                                    },
-                                                    onUpdate = {
-                                                        coroutineScope.launch {
-                                                            viewModel.search(item.mac)
-                                                        }
-                                                    },
-                                                    onSwipe = {
-                                                        swiped = item.mac
-                                                    }
-                                                )
-                                            }
-                                        }
-
-                                        val appendState = lazyPagingItems.loadState.append
-
-                                        if (appendState is LoadState.Error) {
-                                            item {
-                                                Column(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .animateItem(),
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Text(
-                                                        text = stringResource(R.string.error),
-                                                        textAlign = TextAlign.Center,
-                                                        style = MaterialTheme.typography.headlineSmall
-                                                    )
-
-                                                    TextButton(
-                                                        onClick = {
-                                                            error = appendState.error
-                                                        }
-                                                    ) {
-                                                        Text(
-                                                            text = stringResource(R.string.show_stack_trace)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        } else if (appendState is LoadState.Loading) {
-                                            item {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .animateItem(),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    LoadingIndicator()
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.empty),
-                                            textAlign = TextAlign.Center,
-                                            style = MaterialTheme.typography.headlineSmall
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                HorizontalDivider()
-            }
+                },
+                onCopied = { message ->
+                    if (!showsClipboardConfirmation) showSnackbar(message)
+                },
+                onShowError = { error = it }
+            )
 
             HorizontalFloatingToolbar(
-                modifier = Modifier.padding(vertical = 8.dp),
                 expanded = true,
+                scrollBehavior = toolbarScrollBehavior,
+                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .offset(y = -FloatingToolbarDefaults.ScreenOffset),
                 floatingActionButton = {
-                    val text = stringResource(R.string.turn_on_wifi)
-
-                    FloatingToolbarDefaults.VibrantFloatingActionButton(
-                        onClick = {
-                            if (wifiScanPermissionState.status.isGranted) {
-                                @Suppress("DEPRECATION")
-                                if (wifiManager.isWifiEnabled || (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && wifiManager.isScanAlwaysAvailable)) {
-                                    isWifiScanSheetOpened = true
-                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    context.showToast(text = text)
-
-                                    context.startActivity(
-                                        Intent(Settings.Panel.ACTION_WIFI)
-                                    )
-                                } else {
-                                    @Suppress("DEPRECATION")
-                                    wifiManager.isWifiEnabled = true
-                                    isWifiScanSheetOpened = true
-                                }
-                            } else {
-                                launcherForActivityResult.launch(wifiScanPermissionState.permission)
-                            }
-                        }
-                    ) {
+                    FloatingToolbarDefaults.VibrantFloatingActionButton(onClick = ::onWifiScanClick) {
                         Icon(
                             painterResource(R.drawable.wifi_find_24px),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.wifi_scan)
                         )
                     }
-                },
-                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
+                }
             ) {
                 IconButton(
                     onClick = {
-                        fileSaverLauncher.launch(
+                        clearFocus()
+                        viewModel.searchQuery()
+                    },
+                    enabled = canSearchQuery
+                ) {
+                    Icon(
+                        painterResource(R.drawable.travel_explore_24px),
+                        contentDescription = stringResource(R.string.mac_search)
+                    )
+                }
+
+                IconButton(onClick = { importLauncher.launch() }) {
+                    Icon(
+                        painterResource(R.drawable.file_open_24px),
+                        contentDescription = stringResource(R.string.import_backup)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        exportLauncher.launch(
                             suggestedName = "geomac",
                             defaultExtension = "json",
-                            allowedExtensions = setOf("json"),
+                            allowedExtensions = setOf("json")
                         )
                     }
                 ) {
                     Icon(
                         painterResource(R.drawable.save_as_24px),
-                        contentDescription = null
+                        contentDescription = stringResource(R.string.export_backup)
                     )
                 }
             }
         }
     }
 
-    BackHandler(
-        enabled = isFocused
-    ) {
-        keyboardController?.hide()
-        focusManager.clearFocus(true)
-    }
+    BackHandler(enabled = isSearchFocused) { clearFocus() }
 
     error?.let {
         ErrorSheet(
             error = it,
-            onDismissRequest = {
-                error = null
-            }
+            onDismissRequest = { error = null }
         )
     }
 
@@ -454,14 +381,143 @@ fun Geomac() {
         WifiScanSheet(
             onSearch = { mac ->
                 textFieldState.setTextAndPlaceCursorAtEnd(mac.macString(""))
-
-                coroutineScope.launch {
-                    viewModel.search(mac)
-                }
+                viewModel.search(mac)
             },
-            onDismissRequest = {
-                isWifiScanSheetOpened = false
-            }
+            onDismissRequest = { isWifiScanSheetOpened = false }
         )
+    }
+}
+
+private enum class ContentState { Loading, Error, Empty, Items }
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun GeomacContent(
+    lazyPagingItems: LazyPagingItems<Geomac>,
+    searching: Set<Long>,
+    hasQuery: Boolean,
+    contentPadding: PaddingValues,
+    onRefresh: (Long) -> Unit,
+    onDelete: (Geomac) -> Unit,
+    onOpenMap: (Geomac, Service, Coordinates) -> Unit,
+    onCopied: (String) -> Unit,
+    onShowError: (Throwable) -> Unit
+) {
+    val refresh = lazyPagingItems.loadState.refresh
+
+    val state = when {
+        lazyPagingItems.itemCount > 0 -> ContentState.Items
+        refresh is LoadState.Error -> ContentState.Error
+        refresh is LoadState.Loading -> ContentState.Loading
+        else -> ContentState.Empty
+    }
+
+    AnimatedContent(
+        targetState = state,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        modifier = Modifier.fillMaxSize()
+    ) { target ->
+        when (target) {
+            ContentState.Loading -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                ContainedLoadingIndicator()
+            }
+
+            ContentState.Error -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                ErrorMessage(onShowStackTrace = {
+                    (refresh as? LoadState.Error)?.let {
+                        onShowError(
+                            it.error
+                        )
+                    }
+                })
+            }
+
+            ContentState.Empty -> EmptyState(
+                icon = painterResource(R.drawable.travel_explore_24px),
+                title = stringResource(if (hasQuery) R.string.no_matches else R.string.empty),
+                description = stringResource(if (hasQuery) R.string.no_matches_hint else R.string.empty_hint),
+                modifier = Modifier.padding(bottom = contentPadding.calculateBottomPadding())
+            )
+
+            ContentState.Items -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(
+                    count = lazyPagingItems.itemCount,
+                    key = lazyPagingItems.itemKey { it.mac }
+                ) { index ->
+                    lazyPagingItems[index]?.let { item ->
+                        GeomacCard(
+                            item = item,
+                            isSearching = item.mac in searching,
+                            onRefresh = { onRefresh(item.mac) },
+                            onDelete = { onDelete(item) },
+                            onOpenMap = { service, coordinates ->
+                                onOpenMap(
+                                    item,
+                                    service,
+                                    coordinates
+                                )
+                            },
+                            onCopied = onCopied,
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+                }
+
+                when (val append = lazyPagingItems.loadState.append) {
+                    is LoadState.Error -> item(key = "append-error") {
+                        ErrorMessage(
+                            onShowStackTrace = { onShowError(append.error) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem()
+                        )
+                    }
+
+                    is LoadState.Loading -> item(key = "append-loading") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LoadingIndicator()
+                        }
+                    }
+
+                    is LoadState.NotLoading -> Unit
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorMessage(
+    onShowStackTrace: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.error),
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        TextButton(onClick = onShowStackTrace) {
+            Text(stringResource(R.string.show_stack_trace))
+        }
     }
 }

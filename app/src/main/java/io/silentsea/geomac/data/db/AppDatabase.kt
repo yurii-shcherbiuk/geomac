@@ -14,5 +14,5 @@ import io.silentsea.geomac.data.db.entities.GeomacItem
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun geomacHistoryDao(): GeomacDao
+    abstract fun geomacDao(): GeomacDao
 }
