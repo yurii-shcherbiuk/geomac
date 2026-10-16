@@ -8,8 +8,6 @@ import java.util.zip.GZIPOutputStream
 internal inline fun buildBytes(block: DataOutputStream.() -> Unit): ByteArray =
     ByteArrayOutputStream().also { DataOutputStream(it).use(block) }.toByteArray()
 
-internal fun DataOutputStream.writeBytes(vararg bytes: Int) = bytes.forEach(::writeByte)
-
 internal fun ByteArray.indexOf(pattern: ByteArray, startIndex: Int = 0): Int {
     if (pattern.isEmpty() || pattern.size > size) return -1
 
