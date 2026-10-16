@@ -1,12 +1,12 @@
 package io.silentsea.geomac.data.db.entities
 
-import androidx.room.Relation
+import androidx.room3.Relation
 
 data class GeomacItemWithCoordinates(
     val mac: Long,
     @Relation(
-        parentColumn = "mac",
-        entityColumn = "mac"
+        parentColumns = ["mac"],
+        entityColumns = ["mac"]
     )
     val coordinates: List<GeomacCoordinates>
 )

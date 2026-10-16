@@ -77,12 +77,11 @@ dependencies {
     implementation(libs.xmlutil.core)
     implementation(libs.xmlutil.serialization)
     implementation(libs.kotlinx.datetime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-    implementation(libs.room.runtime)
+    implementation(libs.room3.paging)
+    implementation(libs.room3.runtime)
     implementation(libs.accompanist.permissions)
     implementation(libs.filekit.core)
     implementation(libs.filekit.dialogs.compose)
 
-    ksp(libs.room.compiler)
+    ksp(libs.room3.compiler)
 }

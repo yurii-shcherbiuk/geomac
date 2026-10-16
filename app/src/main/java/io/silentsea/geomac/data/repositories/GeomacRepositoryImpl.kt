@@ -1,7 +1,7 @@
 package io.silentsea.geomac.data.repositories
 
 import androidx.paging.PagingSource
-import androidx.room.RoomRawQuery
+import androidx.room3.RoomRawQuery
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -25,6 +25,8 @@ import io.silentsea.geomac.domain.entites.MylnikovResponse
 import io.silentsea.geomac.domain.entites.Services
 import io.silentsea.geomac.domain.entites.YandexResponse
 import io.silentsea.geomac.domain.repositories.GeomacRepository
+import io.silentsea.geomac.utils.gunzip
+import io.silentsea.geomac.utils.gzip
 import io.silentsea.geomac.utils.indexOf
 import io.silentsea.geomac.utils.macString
 import kotlinx.coroutines.Dispatchers
@@ -47,11 +49,7 @@ import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlSerializationPolicy
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
 import kotlin.math.pow
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -63,8 +61,8 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
     @OptIn(ExperimentalSerializationApi::class)
     private val protobuf = ProtoBuf { encodeDefaults = true }
 
-    private val xml = XML {
-        defaultPolicy {
+    private val xml = XML.v1 {
+        policy {
             autoPolymorphic = true
             encodeDefault = XmlSerializationPolicy.XmlEncodeDefault.ALWAYS
             ignoreUnknownChildren()
@@ -251,10 +249,7 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
 
         )
 
-        val gzipped = ByteArrayOutputStream().use { byteArrayOutputStream ->
-            GZIPOutputStream(byteArrayOutputStream).use { it.write(request) }
-            byteArrayOutputStream.toByteArray()
-        }
+        val gzipped = request.gzip()
 
         val size = ByteBuffer.allocate(Int.SIZE_BYTES).apply { putInt(gzipped.size) }.array()
 
@@ -290,10 +285,7 @@ class GeomacRepositoryImpl : GeomacRepository, KoinComponent {
                 .takeIf { index -> index != -1 }
         )
 
-        val gunzipped =
-            ByteArrayInputStream(data.copyOfRange(index, data.size)).use { byteArrayInputStream ->
-                GZIPInputStream(byteArrayInputStream).use { it.readBytes() }
-            }
+        val gunzipped = data.copyOfRange(index, data.size).gunzip()
 
         val response = protobuf.decodeFromByteArray<GoogleResponse>(gunzipped)
 

@@ -1,7 +1,7 @@
 package io.silentsea.geomac.data.db.entities
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
+import androidx.room3.Entity
+import androidx.room3.ForeignKey
 import io.silentsea.geomac.domain.entites.Services
 
 @Entity(

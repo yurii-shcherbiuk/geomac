@@ -9,7 +9,11 @@ import io.silentsea.geomac.data.db.entities.GeomacCoordinates
 import io.silentsea.geomac.data.db.entities.GeomacItemWithCoordinates
 import io.silentsea.geomac.domain.entites.Geomac
 import io.silentsea.geomac.domain.entites.Services
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.util.Locale
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 
 fun ByteArray.indexOf(array: ByteArray): Int {
     if (array.isEmpty() || array.size > size) return -1
@@ -51,3 +55,14 @@ fun GeomacItemWithCoordinates.toGeomac() = Geomac(
     mylnikov = coordinates.forService(Services.MYLNIKOV),
     yandex = coordinates.forService(Services.YANDEX),
 )
+
+ fun ByteArray.gzip(): ByteArray =
+    ByteArrayOutputStream().use { out ->
+        GZIPOutputStream(out).use { it.write(this) }
+        out.toByteArray()
+    }
+
+ fun ByteArray.gunzip(): ByteArray =
+    ByteArrayInputStream(this).use { input ->
+        GZIPInputStream(input).use { it.readBytes() }
+    }

@@ -1,7 +1,7 @@
 package io.silentsea.geomac.data.db
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
+import androidx.room3.Database
+import androidx.room3.RoomDatabase
 import io.silentsea.geomac.data.db.entities.GeomacCoordinates
 import io.silentsea.geomac.data.db.entities.GeomacItem
 
