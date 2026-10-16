@@ -345,7 +345,7 @@ fun Geomac(viewModel: GeomacViewModel = koinViewModel()) {
 
                 IconButton(onClick = { importLauncher.launch() }) {
                     Icon(
-                        painterResource(R.drawable.file_open_24px),
+                        painterResource(R.drawable.upload_file_24px),
                         contentDescription = stringResource(R.string.import_backup)
                     )
                 }
@@ -360,7 +360,7 @@ fun Geomac(viewModel: GeomacViewModel = koinViewModel()) {
                     }
                 ) {
                     Icon(
-                        painterResource(R.drawable.save_as_24px),
+                        painterResource(R.drawable.file_save_24px),
                         contentDescription = stringResource(R.string.export_backup)
                     )
                 }

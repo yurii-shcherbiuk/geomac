@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -61,7 +62,7 @@ fun rememberWifiScanResults(intervalMillis: Long = 10_000L): List<ScanResult> {
         while (true) {
             @Suppress("DEPRECATION")
             wifiManager.startScan()
-            delay(intervalMillis)
+            delay(intervalMillis.milliseconds)
         }
     }
 

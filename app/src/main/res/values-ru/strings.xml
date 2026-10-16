@@ -7,8 +7,8 @@
     <string name="mac">MAC-адрес</string>
     <string name="mac_search">Поиск MAC-адреса</string>
     <string name="mac_copied">MAC-адрес скопирован в буфер обмена</string>
-    <string name="mac_deleted">Удалено %1$s</string>
-    <string name="mac_not_found">%1$s не найден ни одним сервисом</string>
+    <string name="mac_deleted">%1$s удалён</string>
+    <string name="mac_not_found">Ни один сервис не нашёл %1$s</string>
     <string name="invalid_mac">Введите полный MAC-адрес — 12 шестнадцатеричных цифр</string>
     <string name="found_by">Найдено сервисами: %1$d из %2$d</string>
     <string name="searching">Поиск…</string>
@@ -26,7 +26,7 @@
     <string name="refresh">Обновить</string>
     <string name="delete">Удалить</string>
     <string name="open_in_maps">Открыть на карте</string>
-    <string name="no_maps_app">Не найдено приложение карт</string>
+    <string name="no_maps_app">Нет приложения для открытия карт</string>
     <string name="export_backup">Экспорт</string>
     <string name="import_backup">Импорт</string>
     <string name="wifi_scan">Сканирование Wi-Fi</string>
@@ -34,8 +34,8 @@
     <string name="turn_on_wifi">Включите Wi-Fi</string>
     <string name="turn_on_location">Включите геолокацию, чтобы сканировать сети Wi-Fi</string>
     <string name="unknown_ssid">Неизвестный SSID</string>
-    <string name="permission_description">Для сканирования Wi-Fi требуется разрешение на определение местоположения</string>
-    <string name="go_to_settings">Перейти в настройки</string>
+    <string name="permission_description">Для сканирования Wi-Fi нужен доступ к геолокации</string>
+    <string name="go_to_settings">Открыть настройки</string>
     <plurals name="exported">
         <item quantity="one">Экспортирован %1$d адрес</item>
         <item quantity="few">Экспортировано %1$d адреса</item>
